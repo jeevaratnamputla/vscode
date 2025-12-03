@@ -75,17 +75,27 @@ function parseVersion(raw: string): string {
 	return raw.replace(/^git version /, '');
 }
 
-function findSpecificGit(path: string, onValidate: (path: string) => boolean): Promise<IGit> {
+function findSpecificGit(gitPath: string, onValidate: (path: string) => boolean): Promise<IGit> {
 	return new Promise<IGit>((c, e) => {
-		if (!onValidate(path)) {
-			return e(new Error(`Path "${path}" is invalid.`));
+		if (!onValidate(gitPath)) {
+			return e(new Error(`Path "${gitPath}" is invalid.`));
+		}
+
+		// Sanitize the path to prevent command injection
+		const sanitizedPath = path.normalize(path.resolve(gitPath));
+		
+		// Additional validation to prevent shell injection characters
+		if (sanitizedPath.includes(';') || sanitizedPath.includes('&') || sanitizedPath.includes('|') || 
+			sanitizedPath.includes('\n') || sanitizedPath.includes('\r') || sanitizedPath.includes('`') || 
+			sanitizedPath.includes('$')) {
+			return e(new Error(`Path "${gitPath}" contains invalid characters.`));
 		}
 
 		const buffers: Buffer[] = [];
-		const child = cp.spawn(path, ['--version']);
+		const child = cp.spawn(sanitizedPath, ['--version']);
 		child.stdout.on('data', (b: Buffer) => buffers.push(b));
 		child.on('error', cpErrorHandler(e));
-		child.on('close', code => code ? e(new Error(`Not found. Code: ${code}`)) : c({ path, version: parseVersion(Buffer.concat(buffers).toString('utf8').trim()) }));
+		child.on('close', code => code ? e(new Error(`Not found. Code: ${code}`)) : c({ path: gitPath, version: parseVersion(Buffer.concat(buffers).toString('utf8').trim()) }));
 	});
 }
 
