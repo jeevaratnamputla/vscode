@@ -420,7 +420,12 @@ export class CodeCell extends Disposable {
 			if (this.viewCell.isInputCollapsed && this._inputCollapseElement) {
 				// flush the collapsed input with the latest tokens
 				const content = this._getRichTextFromLineTokens(model);
-				this._inputCollapseElement.innerHTML = (collapsedCellTTPolicy?.createHTML(content) ?? content) as string;
+				if (collapsedCellTTPolicy) {
+					this._inputCollapseElement.innerHTML = collapsedCellTTPolicy.createHTML(content) as string;
+				} else {
+					// Fallback to text content to avoid XSS when Trusted Types policy is not available
+					this._inputCollapseElement.textContent = model.getLineContent(1);
+				}
 				this._attachInputExpandButton(this._inputCollapseElement);
 			}
 		}));
@@ -515,7 +520,13 @@ export class CodeCell extends Disposable {
 		// update preview
 		const richEditorText = this.templateData.editor.hasModel() ? this._getRichTextFromLineTokens(this.templateData.editor.getModel()) : this._getRichText(this.viewCell.textBuffer, this.viewCell.language);
 		const element = DOM.$('div.cell-collapse-preview');
-		element.innerHTML = (collapsedCellTTPolicy?.createHTML(richEditorText) ?? richEditorText) as string;
+		if (collapsedCellTTPolicy) {
+			element.innerHTML = collapsedCellTTPolicy.createHTML(richEditorText) as string;
+		} else {
+			// Fallback to text content to avoid XSS when Trusted Types policy is not available
+			const textContent = this.templateData.editor.hasModel() ? this.templateData.editor.getModel().getLineContent(1) : this.viewCell.textBuffer.getLineContent(1);
+			element.textContent = textContent;
+		}
 		this._inputCollapseElement = element;
 		this.templateData.cellInputCollapsedContainer.appendChild(element);
 		this._attachInputExpandButton(element);
