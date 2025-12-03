@@ -164,8 +164,7 @@ export function activate(context: vscode.ExtensionContext) {
 				const serverCommandPath = path.join(vscodePath, 'scripts', serverCommand);
 
 				outputChannel.appendLine(`Launching server: "${serverCommandPath}" ${commandArgs.join(' ')}`);
-				const shell = (process.platform === 'win32');
-				extHostProcess = cp.spawn(serverCommandPath, commandArgs, { env, cwd: vscodePath, shell });
+				extHostProcess = cp.spawn(serverCommandPath, commandArgs, { env, cwd: vscodePath, shell: false });
 			} else {
 				const extensionToInstall = process.env['TESTRESOLVER_INSTALL_BUILTIN_EXTENSION'];
 				if (extensionToInstall) {
@@ -182,8 +181,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 				outputChannel.appendLine(`Using server build at ${serverLocation}`);
 				outputChannel.appendLine(`Server arguments ${commandArgs.join(' ')}`);
-				const shell = (process.platform === 'win32');
-				extHostProcess = cp.spawn(path.join(serverLocation, 'bin', serverCommand), commandArgs, { env, cwd: serverLocation, shell });
+				extHostProcess = cp.spawn(path.join(serverLocation, 'bin', serverCommand), commandArgs, { env, cwd: serverLocation, shell: false });
 			}
 			extHostProcess.stdout!.on('data', (data: Buffer) => processOutput(data.toString()));
 			extHostProcess.stderr!.on('data', (data: Buffer) => processOutput(data.toString()));
