@@ -480,12 +480,17 @@ export class UserDataProfileImportExportService extends Disposable implements IU
 	}
 
 	private getProfileNameIndex(name: string): number {
-		const nameRegEx = new RegExp(`${escapeRegExpCharacters(name)}\\s(\\d+)`);
 		let nameIndex = 0;
 		for (const profile of this.userDataProfilesService.profiles) {
-			const matches = nameRegEx.exec(profile.name);
-			const index = matches ? parseInt(matches[1]) : 0;
-			nameIndex = index > nameIndex ? index : nameIndex;
+			// Check if profile name starts with the given name followed by a space
+			if (profile.name.startsWith(name + ' ')) {
+				const suffix = profile.name.substring(name.length + 1);
+				// Check if the suffix is a valid number
+				const index = parseInt(suffix, 10);
+				if (!isNaN(index) && suffix === index.toString()) {
+					nameIndex = index > nameIndex ? index : nameIndex;
+				}
+			}
 		}
 		return nameIndex + 1;
 	}
